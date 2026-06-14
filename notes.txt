@@ -1,1 +1,0 @@
-once the staff is added by admin , the staff can login with tehir email id and password is default staff123
