@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { MapPin, Phone, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { lostFoundAPI } from '../api/services';
 import Modal from '../components/ui/Modal';
@@ -23,43 +23,63 @@ export default function LostFound() {
     e.preventDefault();
     try {
       await lostFoundAPI.create(form);
-      toast.success('Posted');
+      toast.success('Item posted');
       setModalOpen(false);
+      setForm({ title: '', description: '', type: 'Lost', location: '', contactInfo: '' });
       load();
     } catch {
-      toast.error('Failed');
+      toast.error('Failed to post item');
     }
   };
 
   return (
     <div className="page-container">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Lost & Found</h1>
-        <button onClick={() => setModalOpen(true)} className="btn-primary"><Plus size={18} /> Post Item</button>
+      <div className="module-header">
+        <div>
+          <p className="section-kicker">Community desk</p>
+          <h1 className="page-title">Lost & Found</h1>
+          <p className="page-subtitle">Track missing and found items inside the society.</p>
+        </div>
+        <button onClick={() => setModalOpen(true)} className="btn-primary">
+          <Plus size={18} /> Post Item
+        </button>
       </div>
+
       {loading ? <TableSkeleton /> : items.length === 0 ? <EmptyState /> : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
-            <div key={item._id} className={`glass-card p-5 border-l-4 ${item.type === 'Lost' ? 'border-amber-500' : 'border-emerald-500'}`}>
-              <span className={`text-xs font-bold uppercase ${item.type === 'Lost' ? 'text-amber-600' : 'text-emerald-600'}`}>{item.type}</span>
-              <h3 className="mt-1 font-semibold">{item.title}</h3>
-              <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-              <p className="mt-2 text-xs text-slate-400">{item.location} • Contact: {item.contactInfo}</p>
-            </div>
+            <article key={item._id} className="surface-card p-5">
+              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                item.type === 'Lost'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+              }`}>
+                {item.type}
+              </span>
+              <h2 className="mt-3 text-lg font-semibold text-slate-950 dark:text-white">{item.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
+              <div className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                {item.location && <p className="flex items-center gap-2"><MapPin size={15} /> {item.location}</p>}
+                {item.contactInfo && <p className="flex items-center gap-2"><Phone size={15} /> {item.contactInfo}</p>}
+              </div>
+            </article>
           ))}
         </div>
       )}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Post Lost/Found">
-        <form onSubmit={handleCreate} className="space-y-3">
+
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Post Lost/Found Item">
+        <form onSubmit={handleCreate} className="space-y-4">
           <select className="input-field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
             <option>Lost</option>
             <option>Found</option>
           </select>
-          <input className="input-field" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-          <textarea className="input-field" rows={3} placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
-          <input className="input-field" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-          <input className="input-field" placeholder="Contact Info" value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} />
-          <button type="submit" className="btn-primary w-full">Post</button>
+          <input className="input-field" placeholder="Item title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <textarea className="input-field" rows={4} placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input className="input-field" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+            <input className="input-field" placeholder="Contact info" value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} />
+          </div>
+          <button type="submit" className="btn-primary w-full">Post Item</button>
         </form>
       </Modal>
     </div>

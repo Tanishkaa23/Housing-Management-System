@@ -18,7 +18,7 @@ export default function Login() {
     try {
       const user = await login(email, password);
       toast.success('Welcome back!');
-      navigate(user.role === 'admin' ? '/admin/dashboard' : '/resident/dashboard');
+      navigate(user.role === 'admin' ? '/admin/dashboard' : '/complaints');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
@@ -37,10 +37,12 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4 dark:from-slate-950 dark:to-indigo-950">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md glass-card p-8">
+    <div className="flex min-h-screen items-center justify-center bg-[#e4e5e2] p-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md glass-card p-8 shadow-lg">
         <div className="mb-6 text-center">
-          <Building2 className="mx-auto text-indigo-600" size={40} />
+          <div className="mx-auto mb-4 inline-flex rounded-2xl bg-[#5f6368] p-3 text-white">
+            <Building2 size={28} />
+          </div>
           <h1 className="mt-2 text-2xl font-bold">Welcome Back</h1>
           <p className="text-sm text-slate-500">Sign in to SocietySync</p>
         </div>
@@ -54,7 +56,7 @@ export default function Login() {
           <button type="button" onClick={() => fillDemo('resident')} className="btn-secondary flex-1 text-xs">Resident Demo</button>
         </div>
         <p className="mt-4 text-center text-sm text-slate-500">
-          No account? <Link to="/signup" className="font-semibold text-indigo-600">Sign up</Link>
+          No account? <Link to="/signup" className="font-semibold text-[#5f6368] hover:text-[#4f5458]">Sign up</Link>
         </p>
       </motion.div>
     </div>

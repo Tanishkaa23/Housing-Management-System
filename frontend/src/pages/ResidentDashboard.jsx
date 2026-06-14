@@ -91,6 +91,10 @@ export default function ResidentDashboard() {
           ))}
         </div>
       </div>
+      <div className="glass-card p-5">
+        <h3 className="mb-2 font-semibold">Payment History</h3>
+        <p className="text-sm text-slate-500">Payment history is not available in this build yet.</p>
+      </div>
     </div>
   );
 }

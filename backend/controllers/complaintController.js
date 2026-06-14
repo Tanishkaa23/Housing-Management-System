@@ -1,9 +1,29 @@
 import Complaint from '../models/Complaint.js';
+import Staff from '../models/Staff.js';
 import { logActivity } from '../utils/activityLogger.js';
+
+const categoryToRole = {
+  Water: 'Plumber',
+  Electricity: 'Electrician',
+  Cleaning: 'Cleaner',
+  Security: 'Security',
+  Internet: 'Other',
+  'Lift Issue': 'Electrician',
+};
 
 export const getComplaints = async (req, res) => {
   const filter = {};
   if (req.user.role === 'resident') filter.resident = req.user._id;
+  
+  if (req.user.role === 'staff') {
+    const staffProfile = await Staff.findOne({ user: req.user._id });
+    if (staffProfile) {
+      filter.assignedStaff = staffProfile._id;
+    } else {
+      filter.assignedStaff = null;
+    }
+  }
+
   if (req.query.status) filter.status = req.query.status;
   if (req.query.category) filter.category = req.query.category;
   if (req.query.search) {
@@ -29,6 +49,26 @@ export const getComplaint = async (req, res) => {
 
 export const createComplaint = async (req, res) => {
   const { title, description, category } = req.body;
+
+  const targetRole = categoryToRole[category] || 'Other';
+  const availableStaff = await Staff.findOne({ role: targetRole, isAvailable: true });
+
+  const timeline = [{ status: 'Pending', note: 'Complaint submitted' }];
+  let assignedStaffId = undefined;
+
+  if (availableStaff) {
+    assignedStaffId = availableStaff._id;
+    timeline.push({
+      status: 'Pending',
+      note: `Automatically assigned to ${availableStaff.name} (${availableStaff.role})`
+    });
+  } else {
+    timeline.push({
+      status: 'Pending',
+      note: `No available staff found for ${category}. Pending manual assignment.`
+    });
+  }
+
   const complaint = await Complaint.create({
     title,
     description,
@@ -36,8 +76,10 @@ export const createComplaint = async (req, res) => {
     image: req.file ? `/uploads/${req.file.filename}` : '',
     resident: req.user._id,
     flatNumber: req.user.flatNumber,
-    timeline: [{ status: 'Pending', note: 'Complaint submitted' }],
+    assignedStaff: assignedStaffId,
+    timeline,
   });
+
   await logActivity('complaint', `New complaint: ${title}`, req.user._id);
   res.status(201).json(complaint);
 };

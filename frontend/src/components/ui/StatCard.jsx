@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
 
 const colors = {
-  indigo: 'from-indigo-500 to-purple-600',
-  emerald: 'from-emerald-500 to-teal-600',
-  amber: 'from-amber-500 to-orange-600',
-  rose: 'from-rose-500 to-pink-600',
-  blue: 'from-blue-500 to-cyan-600',
+  indigo: 'bg-[#e6e8eb] text-slate-700',
+  emerald: 'bg-[#e6e8eb] text-slate-700',
+  amber: 'bg-[#e6e8eb] text-slate-700',
+  rose: 'bg-[#e6e8eb] text-slate-700',
+  blue: 'bg-[#e6e8eb] text-slate-700',
 };
 
 export default function StatCard({ title, value, icon: Icon, color = 'indigo', subtitle }) {
@@ -13,10 +13,10 @@ export default function StatCard({ title, value, icon: Icon, color = 'indigo', s
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card overflow-hidden p-5"
+      className="glass-card p-5"
     >
       <motion.div
-        className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${colors[color]} p-3 text-white shadow-lg`}
+        className={`mb-4 inline-flex rounded-xl p-3 ${colors[color]}`}
         whileHover={{ scale: 1.05 }}
       >
         {Icon && <Icon size={22} />}

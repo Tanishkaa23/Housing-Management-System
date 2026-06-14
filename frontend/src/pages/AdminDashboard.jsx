@@ -53,7 +53,7 @@ export default function AdminDashboard() {
         <StatCard title="Total Residents" value={data?.totalResidents || 0} icon={Users} color="indigo" />
         <StatCard title="Total Complaints" value={data?.totalComplaints || 0} icon={AlertCircle} color="amber" />
         <StatCard title="Pending Complaints" value={data?.pendingComplaints || 0} icon={AlertCircle} color="rose" />
-        <StatCard title="Maintenance Collected" value={`₹${(data?.totalCollected || 0).toLocaleString()}`} icon={CreditCard} color="emerald" />
+
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -77,17 +77,6 @@ export default function AdminDashboard() {
               <Tooltip />
               <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="glass-card p-5 lg:col-span-2">
-          <h3 className="mb-4 font-semibold">Monthly Maintenance Collection</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={monthlyChart}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={2} />
-            </LineChart>
           </ResponsiveContainer>
         </div>
       </div>

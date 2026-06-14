@@ -10,6 +10,7 @@ const staffSchema = new mongoose.Schema(
     },
     phone: { type: String, required: true },
     email: { type: String, default: '' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isAvailable: { type: Boolean, default: true },
     attendance: [
       {

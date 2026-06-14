@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, Sun, Moon, Bell, LogOut, User } from 'lucide-react';
+import { Menu, Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { noticeAPI } from '../../api/services';
+import Modal from '../ui/Modal';
 
 export default function Navbar({ onMenuClick }) {
   const { user, logout } = useAuth();
-  const { dark, toggleTheme } = useTheme();
   const [notices, setNotices] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
   useEffect(() => {
     noticeAPI.getAll().then(({ data }) => setNotices(data.slice(0, 5))).catch(() => {});
@@ -18,21 +17,21 @@ export default function Navbar({ onMenuClick }) {
   const urgentCount = notices.filter((n) => n.priority === 'Urgent').length;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 md:px-6">
-      <button onClick={onMenuClick} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800">
-        <Menu size={22} />
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#d1d5db] bg-[#e4e5e2] px-4 md:px-6">
+      <button onClick={onMenuClick} className="rounded-xl bg-[#f7f7f6] p-2.5 shadow-sm hover:bg-white lg:hidden">
+        <Menu size={20} />
       </button>
-      <div className="hidden text-sm text-slate-500 md:block">
-        Welcome back, <span className="font-semibold text-slate-800 dark:text-white">{user?.name}</span>
+      <div className="hidden items-center gap-3 text-sm text-slate-600 md:flex">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#5f6368] text-xs font-bold text-white">
+          {user?.name?.slice(0, 1)?.toUpperCase() || 'U'}
+        </span>
+        Welcome back, <span className="font-semibold text-slate-900">{user?.name}</span>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={toggleTheme} className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800">
-          {dark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
         <div className="relative">
           <button
             onClick={() => setShowNotif(!showNotif)}
-            className="relative rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="relative rounded-xl bg-[#f7f7f6] p-2.5 shadow-sm hover:bg-white"
           >
             <Bell size={20} />
             {urgentCount > 0 && (
@@ -42,16 +41,16 @@ export default function Navbar({ onMenuClick }) {
             )}
           </button>
           {showNotif && (
-            <div className="absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
-              <div className="border-b border-slate-200 p-3 font-semibold dark:border-slate-700">Notifications</div>
+            <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-[#d1d5db] bg-[#f7f7f6] shadow-xl">
+              <div className="border-b border-[#e1e5ea] p-3 font-semibold">Notifications</div>
               <div className="max-h-64 overflow-y-auto">
                 {notices.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-400">No notices</p>
+                  <p className="p-4 text-sm text-slate-500">No notices</p>
                 ) : (
                   notices.map((n) => (
-                    <div key={n._id} className="border-b border-slate-100 p-3 text-sm last:border-0 dark:border-slate-700">
+                    <div key={n._id} className="border-b border-[#e6e8eb] p-3 text-sm last:border-0">
                       <p className="font-medium">{n.title}</p>
-                      <p className="text-xs text-slate-400">{n.priority}</p>
+                      <p className="text-xs text-slate-500">{n.priority}</p>
                     </div>
                   ))
                 )}
@@ -59,13 +58,33 @@ export default function Navbar({ onMenuClick }) {
             </div>
           )}
         </div>
-        <Link to="/profile" className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800">
-          <User size={20} />
-        </Link>
-        <button onClick={logout} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20">
+        <button onClick={() => setConfirmLogoutOpen(true)} className="rounded-xl bg-[#f7f7f6] p-2.5 text-rose-600 shadow-sm hover:bg-white">
           <LogOut size={20} />
         </button>
       </div>
+
+      <Modal isOpen={confirmLogoutOpen} onClose={() => setConfirmLogoutOpen(false)} title="Confirm Logout" size="sm">
+        <p className="text-sm text-slate-600">Are you sure you want to log out?</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setConfirmLogoutOpen(false)}
+            className="btn-secondary"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmLogoutOpen(false);
+              logout();
+            }}
+            className="btn-primary"
+          >
+            Yes, Log Out
+          </button>
+        </div>
+      </Modal>
     </header>
   );
 }
