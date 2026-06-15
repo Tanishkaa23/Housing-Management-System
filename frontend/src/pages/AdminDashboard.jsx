@@ -7,12 +7,15 @@ import { CardSkeleton } from '../components/ui/Skeleton';
 import Badge from '../components/ui/Badge';
 import { dashboardAPI, sosAPI } from '../api/services';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [activityFilter, setActivityFilter] = useState('all'); // all | mine | complaints
 
   useEffect(() => {
     dashboardAPI.admin().then(({ data: d }) => setData(d)).catch(() => toast.error('Failed to load dashboard')).finally(() => setLoading(false));
@@ -82,14 +85,36 @@ export default function AdminDashboard() {
       </div>
 
       <div className="glass-card p-5">
-        <h3 className="mb-4 font-semibold">Recent Activity</h3>
-        <div className="space-y-2">
-          {data?.recentActivities?.map((a) => (
-            <div key={a._id} className="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0 dark:border-slate-800">
-              <span>{a.message}</span>
-              <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <h3 className="mb-4 font-semibold">Recent Activity</h3>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActivityFilter('all')} className={`btn-sm ${activityFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}>All</button>
+            <button onClick={() => setActivityFilter('mine')} className={`btn-sm ${activityFilter === 'mine' ? 'btn-primary' : 'btn-ghost'}`}>Mine</button>
+            <button onClick={() => setActivityFilter('complaints')} className={`btn-sm ${activityFilter === 'complaints' ? 'btn-primary' : 'btn-ghost'}`}>Complaints</button>
+          </div>
+        </div>
+
+        {/* Scrollable container */}
+        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+          {(() => {
+            const activities = data?.recentActivities || [];
+            const normalizeUser = (u) => (u && typeof u === 'object' ? (u._id || u.id) : u);
+            const filtered = activities.filter((a) => {
+              if (activityFilter === 'all') return true;
+              if (activityFilter === 'mine') return normalizeUser(a.user) === user?._id;
+              if (activityFilter === 'complaints') return a.type === 'complaint';
+              return true;
+            });
+
+            if (filtered.length === 0) return <div className="text-sm text-slate-500">No activities found.</div>;
+
+            return filtered.map((a) => (
+              <div key={a._id} className="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0 dark:border-slate-800">
+                <span>{a.message}</span>
+                <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+              </div>
+            ));
+          })()}
         </div>
       </div>
     </div>
