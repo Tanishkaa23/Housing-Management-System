@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const apiHost = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_URL = apiHost ? `${apiHost.replace(/\/api$/, '')}/api` : '/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -8,6 +9,14 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    if (typeof config.headers.delete === 'function') {
+      config.headers.delete('Content-Type');
+    } else {
+      delete config.headers['Content-Type'];
+    }
+  }
+
   const stored = localStorage.getItem('societysync_user');
   if (stored) {
     const { token } = JSON.parse(stored);

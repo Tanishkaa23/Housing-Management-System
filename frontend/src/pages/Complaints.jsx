@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Mic, Droplet, Zap, Sparkles, Shield, Wifi, ArrowUpDown, User, Home, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Mic, Droplet, Zap, Sparkles, Shield, Wifi, ArrowUpDown, User, Home, Clock, AlertCircle, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { complaintAPI, staffAPI } from '../api/services';
@@ -11,6 +11,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ComplaintTimeline from '../components/ui/ComplaintTimeline';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import VoiceRecorder from '../components/ui/VoiceRecorder';
+import { resolveAssetUrl } from '../utils/assets';
 
 const categories = ['Water', 'Electricity', 'Cleaning', 'Security', 'Internet', 'Lift Issue'];
 
@@ -54,7 +55,7 @@ const categoryThemes = {
 };
 
 export default function Complaints() {
-  const { isAdmin, isStaff } = useAuth();
+  const { user, isAdmin, isStaff } = useAuth();
   const [complaints, setComplaints] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,7 @@ export default function Complaints() {
   const [modalOpen, setModalOpen] = useState(false);
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [editingComplaint, setEditingComplaint] = useState(null);
   const [form, setForm] = useState({ title: '', description: '', category: 'Water' });
   const [image, setImage] = useState(null);
   const totalCount = complaints.length;
@@ -79,7 +81,32 @@ export default function Complaints() {
   useEffect(() => { load(); }, [search, statusFilter]);
   useEffect(() => { if (isAdmin) staffAPI.getAll().then(({ data }) => setStaff(data)); }, [isAdmin]);
 
-  const handleCreate = async (e) => {
+  const openCreateModal = () => {
+    setEditingComplaint(null);
+    setForm({ title: '', description: '', category: 'Water' });
+    setImage(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (complaint) => {
+    setEditingComplaint(complaint);
+    setForm({
+      title: complaint.title || '',
+      description: complaint.description || '',
+      category: complaint.category || 'Water',
+    });
+    setImage(null);
+    setSelected(null);
+    setModalOpen(true);
+  };
+
+  const closeFormModal = () => {
+    setModalOpen(false);
+    setEditingComplaint(null);
+    setImage(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData();
     fd.append('title', form.title);
@@ -87,14 +114,18 @@ export default function Complaints() {
     fd.append('category', form.category);
     if (image) fd.append('image', image);
     try {
-      await complaintAPI.create(fd);
-      toast.success('Complaint submitted');
-      setModalOpen(false);
+      if (editingComplaint) {
+        await complaintAPI.update(editingComplaint._id, fd);
+        toast.success('Complaint updated');
+      } else {
+        await complaintAPI.create(fd);
+        toast.success('Complaint submitted');
+      }
+      closeFormModal();
       setForm({ title: '', description: '', category: 'Water' });
-      setImage(null);
       load();
-    } catch {
-      toast.error('Failed to submit');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save complaint');
     }
   };
 
@@ -158,7 +189,7 @@ export default function Complaints() {
               <span>Voice Assist</span>
             </button>
             <button
-              onClick={() => setModalOpen(true)}
+              onClick={openCreateModal}
               className="btn-primary"
             >
               <Plus size={18} />
@@ -256,7 +287,6 @@ export default function Complaints() {
                   </div>
                   <Badge status={c.status} />
                 </div>
-
                 {/* Card Body */}
                 <p className="mt-3.5 text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                   {c.description}
@@ -266,7 +296,7 @@ export default function Complaints() {
                 {c.image && (
                   <div className="mt-4 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800/80">
                     <img
-                      src={c.image}
+                      src={resolveAssetUrl(c.image)}
                       alt="Complaint attachment"
                       className="h-28 w-full object-cover transition-transform duration-300 hover:scale-105"
                       loading="lazy"
@@ -275,7 +305,7 @@ export default function Complaints() {
                 )}
 
                 {/* Card Footer details */}
-                <div className="mt-4 flex flex-wrap items-center justify-between border-t border-slate-50 dark:border-slate-800/40 pt-3.5 text-xs text-slate-400">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50 dark:border-slate-800/40 pt-3.5 text-xs text-slate-400">
                   <div className="flex items-center gap-1.5 font-medium">
                     <Home size={13} className="text-slate-300 dark:text-slate-600" />
                     <span>Flat {c.flatNumber}</span>
@@ -287,9 +317,24 @@ export default function Complaints() {
                       </>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock size={13} className="text-slate-300 dark:text-slate-600" />
-                    <span>{new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Clock size={13} className="text-slate-300 dark:text-slate-600" />
+                      <span>{new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    {(isAdmin || c.resident?._id === user?._id || c.resident === user?._id) && !isStaff && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditModal(c);
+                        }}
+                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        aria-label={`Edit ${c.title}`}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -306,8 +351,8 @@ export default function Complaints() {
       />
 
       {/* Manual Registration Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Raise Complaint">
-        <form onSubmit={handleCreate} className="space-y-4">
+      <Modal isOpen={modalOpen} onClose={closeFormModal} title={editingComplaint ? 'Edit Complaint' : 'Raise Complaint'}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">Complaint Title</label>
             <input
@@ -343,11 +388,13 @@ export default function Complaints() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">Attach Photo (Optional)</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              {editingComplaint ? 'Replace Photo (Optional)' : 'Attach Photo (Optional)'}
+            </label>
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setImage(e.target.files[0])}
+              onChange={(e) => setImage(e.target.files[0] || null)}
               className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700 cursor-pointer"
             />
           </div>
@@ -356,7 +403,7 @@ export default function Complaints() {
             type="submit"
             className="btn-primary w-full py-3"
           >
-            Submit Complaint
+            {editingComplaint ? 'Save Changes' : 'Submit Complaint'}
           </button>
         </form>
       </Modal>
@@ -372,6 +419,16 @@ export default function Complaints() {
               </div>
               <Badge status={selected.status} />
             </div>
+            {(isAdmin || selected.resident?._id === user?._id || selected.resident === user?._id) && !isStaff && (
+              <button
+                type="button"
+                onClick={() => openEditModal(selected)}
+                className="btn-secondary"
+              >
+                <Pencil size={16} />
+                <span>Edit Complaint</span>
+              </button>
+            )}
 
             <div className="grid grid-cols-2 gap-4 rounded-lg bg-slate-50 dark:bg-slate-900/30 p-4 text-sm text-slate-600 dark:text-slate-400">
               <div>
@@ -397,8 +454,8 @@ export default function Complaints() {
               <div>
                 <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-2">Attached Photograph</span>
                 <div className="overflow-hidden rounded-lg border border-slate-100 dark:border-slate-800 shadow">
-                  <a href={selected.image} target="_blank" rel="noopener noreferrer">
-                    <img src={selected.image} alt="Complaint detail attachment" className="w-full max-h-80 object-cover" />
+                  <a href={resolveAssetUrl(selected.image)} target="_blank" rel="noopener noreferrer">
+                    <img src={resolveAssetUrl(selected.image)} alt="Complaint detail attachment" className="w-full max-h-80 object-cover" />
                   </a>
                 </div>
               </div>
