@@ -33,6 +33,7 @@ export const getComplaints = async (req, res) => {
     ];
   }
   const complaints = await Complaint.find(filter)
+    .select('-imageData')
     .populate('resident', 'name email flatNumber')
     .populate('assignedStaff', 'name role phone')
     .sort({ createdAt: -1 });
@@ -41,10 +42,20 @@ export const getComplaints = async (req, res) => {
 
 export const getComplaint = async (req, res) => {
   const complaint = await Complaint.findById(req.params.id)
+    .select('-imageData')
     .populate('resident', 'name email flatNumber')
     .populate('assignedStaff', 'name role phone');
   if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
   res.json(complaint);
+};
+
+export const getComplaintImage = async (req, res) => {
+  const complaint = await Complaint.findById(req.params.id).select('imageData imageContentType');
+  if (!complaint?.imageData) return res.status(404).json({ message: 'Image not found' });
+
+  res.set('Content-Type', complaint.imageContentType || 'application/octet-stream');
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(complaint.imageData);
 };
 
 export const createComplaint = async (req, res) => {
@@ -73,12 +84,19 @@ export const createComplaint = async (req, res) => {
     title,
     description,
     category,
-    image: req.file ? `/uploads/${req.file.filename}` : '',
+    image: '',
+    imageData: req.file?.buffer,
+    imageContentType: req.file?.mimetype || '',
     resident: req.user._id,
     flatNumber: req.user.flatNumber,
     assignedStaff: assignedStaffId,
     timeline,
   });
+
+  if (req.file) {
+    complaint.image = `/api/complaints/${complaint._id}/image`;
+    await complaint.save();
+  }
 
   await logActivity('complaint', `New complaint: ${title}`, req.user._id);
   res.status(201).json(complaint);
@@ -87,14 +105,41 @@ export const createComplaint = async (req, res) => {
 export const updateComplaint = async (req, res) => {
   const complaint = await Complaint.findById(req.params.id);
   if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
+
+  const isOwner = complaint.resident.toString() === req.user._id.toString();
+  const canManage = req.user.role === 'admin' || req.user.role === 'staff';
+
+  if (!isOwner && !canManage) {
+    return res.status(403).json({ message: 'Not authorized to update this complaint' });
+  }
+
+  if (isOwner || req.user.role === 'admin') {
+    if (req.body.title) complaint.title = req.body.title;
+    if (req.body.description) complaint.description = req.body.description;
+    if (req.body.category) complaint.category = req.body.category;
+    if (req.file) {
+      complaint.image = `/api/complaints/${complaint._id}/image`;
+      complaint.imageData = req.file.buffer;
+      complaint.imageContentType = req.file.mimetype;
+    }
+  }
+
   if (req.body.status) {
+    if (!canManage) {
+      return res.status(403).json({ message: 'Only staff or admin can update complaint status' });
+    }
     complaint.status = req.body.status;
     complaint.timeline.push({
       status: req.body.status,
       note: req.body.note || `Status updated to ${req.body.status}`,
     });
   }
-  if (req.body.assignedStaff) complaint.assignedStaff = req.body.assignedStaff;
+  if (req.body.assignedStaff) {
+    if (!canManage) {
+      return res.status(403).json({ message: 'Only staff or admin can assign staff' });
+    }
+    complaint.assignedStaff = req.body.assignedStaff;
+  }
   const updated = await complaint.save();
   await logActivity('complaint', `Complaint updated: ${updated.title}`, req.user._id);
   res.json(updated);

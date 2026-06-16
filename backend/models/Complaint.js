@@ -15,6 +15,8 @@ const complaintSchema = new mongoose.Schema(
       default: 'Pending',
     },
     image: { type: String, default: '' },
+    imageData: { type: Buffer },
+    imageContentType: { type: String, default: '' },
     resident: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     flatNumber: { type: String, required: true },
     assignedStaff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
