@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import {
-  MessageSquareWarning, Bell, UserCog, Search, X, Building2
+  MessageSquareWarning, Bell, UserCog, Search, X, Building2, LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const adminLinks = [
+  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/complaints', icon: MessageSquareWarning, label: 'Complaints' },
   { to: '/notices', icon: Bell, label: 'Notices' },  
   { to: '/lost-found', icon: Search, label: 'Lost & Found' },

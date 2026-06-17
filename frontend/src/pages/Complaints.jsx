@@ -179,7 +179,7 @@ export default function Complaints() {
               : 'Raise issues, track resolve progress, and coordinate with maintenance staff.'}
           </p>
         </div>
-        {!isAdmin && !isStaff && (
+        {!isStaff && (
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setVoiceModalOpen(true)}
