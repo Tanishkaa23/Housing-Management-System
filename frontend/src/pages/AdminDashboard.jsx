@@ -89,7 +89,6 @@ export default function AdminDashboard() {
           <h3 className="mb-4 font-semibold">Recent Activity</h3>
           <div className="flex items-center gap-2">
             <button onClick={() => setActivityFilter('all')} className={`btn-sm ${activityFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}>All</button>
-            <button onClick={() => setActivityFilter('mine')} className={`btn-sm ${activityFilter === 'mine' ? 'btn-primary' : 'btn-ghost'}`}>Mine</button>
             <button onClick={() => setActivityFilter('complaints')} className={`btn-sm ${activityFilter === 'complaints' ? 'btn-primary' : 'btn-ghost'}`}>Complaints</button>
           </div>
         </div>
@@ -101,7 +100,6 @@ export default function AdminDashboard() {
             const normalizeUser = (u) => (u && typeof u === 'object' ? (u._id || u.id) : u);
             const filtered = activities.filter((a) => {
               if (activityFilter === 'all') return true;
-              if (activityFilter === 'mine') return normalizeUser(a.user) === user?._id;
               if (activityFilter === 'complaints') return a.type === 'complaint';
               return true;
             });
