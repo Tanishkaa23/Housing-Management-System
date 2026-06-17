@@ -26,15 +26,7 @@ export default function Login() {
     }
   };
 
-  const fillDemo = (role) => {
-    if (role === 'admin') {
-      setEmail('admin@societysync.com');
-      setPassword('admin123');
-    } else {
-      setEmail('resident@societysync.com');
-      setPassword('resident123');
-    }
-  };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#e4e5e2] p-4">
@@ -51,10 +43,7 @@ export default function Login() {
           <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" required />
           <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Signing in...' : 'Sign In'}</button>
         </form>
-        <div className="mt-4 flex gap-2">
-          <button type="button" onClick={() => fillDemo('admin')} className="btn-secondary flex-1 text-xs">Admin Demo</button>
-          <button type="button" onClick={() => fillDemo('resident')} className="btn-secondary flex-1 text-xs">Resident Demo</button>
-        </div>
+       
         <p className="mt-4 text-center text-sm text-slate-500">
           No account? <Link to="/signup" className="font-semibold text-[#5f6368] hover:text-[#4f5458]">Sign up</Link>
         </p>
